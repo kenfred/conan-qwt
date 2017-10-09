@@ -31,7 +31,9 @@ class QwtConan(ConanFile):
     default_options = "shared=True", "plot=True", "widgets=True", "svg=True", "opengl=True", \
                         "mathml=False", "designer=True", "examples=False", "playground=False"
 
-    build_requires = "Qt/5.8.0@kenfred/testing"               
+    build_requires = "Qt/5.8.0@kenfred/testing"
+
+    exports_sources = ["FindQwt.cmake"]               
 
     def source(self):
         zip_name = "qwt-%s.zip" % self.version if sys.platform == "win32" else "qwt-%s.tar.gz" % self.version
@@ -90,7 +92,8 @@ class QwtConan(ConanFile):
             self.run("cd qwt-%s && %s && %s %s" % (self.version, vcvars, build_command, " ".join(build_args)))
 
     def package(self):
-        self.copy("*.h", dst="include", src="qwt")
+        self.copy("FindQwt.cmake", ".", ".")
+        self.copy("*.h", dst="include", src=os.path.join("qwt-%s" % self.version, "src"))
         self.copy("*qwt.lib", dst="lib", keep_path=False)
         self.copy("*.dll", dst="bin", keep_path=False)
         self.copy("*.so", dst="lib", keep_path=False)

@@ -101,4 +101,4 @@ class QwtConan(ConanFile):
         self.copy("*.a", dst="lib", keep_path=False)
 
     def package_info(self):
-        self.cpp_info.libs = ["qwt"]
+        self.cpp_info.libs = ["qwt" if self.settings.build_type=="Release" else "qwtd"]

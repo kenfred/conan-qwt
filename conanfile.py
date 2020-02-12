@@ -6,10 +6,10 @@ import os, sys
 from distutils.spawn import find_executable
 
 class QwtConan(ConanFile):
-    name = "Qwt"
+    name = "qwt"
     version = "6.1.3"
     license = "Qwt License, Version 1.0 http://qwt.sourceforge.net/qwtlicense.html"
-    url = "https://github.com/kenfred/conan-qwt"
+    url = "https://github.com/ralfschulze/conan-qwt"
     description = "The Qwt library contains GUI Components and utility classes which are " \
                     "primarily useful for programs with a technical background. Beside a " \
                     "framework for 2D plots it provides scales, sliders, dials, compasses, " \
@@ -31,12 +31,13 @@ class QwtConan(ConanFile):
     default_options = "shared=True", "plot=True", "widgets=True", "svg=True", "opengl=True", \
                         "mathml=False", "designer=True", "examples=False", "playground=False"
 
-    build_requires = "Qt/5.8.0@kenfred/testing"
-
+    build_requires = "qt/[>4.0]@bincrafters/stable"
+    generators = "cmake"
     exports_sources = ["FindQwt.cmake"]               
+    
 
     def source(self):
-        zip_name = "qwt-%s.zip" % self.version if sys.platform == "win32" else "qwt-%s.tar.gz" % self.version
+        zip_name = "qwt-%s.zip" % self.version if sys.platform == "win32" else "qwt-%s.tar.bz2" % self.version
         url = "https://sourceforge.net/projects/qwt/files/qwt/%s/%s" % (self.version, zip_name)
         self.output.info("Downloading %s..." % url)
         tools.download(url, zip_name)
@@ -72,7 +73,14 @@ class QwtConan(ConanFile):
             else:
                 raise ConanException("Not yet implemented for this compiler")
         else:
-            raise ConanException("Not yet implemented for this compiler")
+            self._build_qmake()
+
+    def _build_qmake(self, args = ""):
+        build_args = ["-j", str(cpu_count())]
+        self.run("cd qwt-%s && qmake -r qwt.pro" %
+                (self.version))
+        self.run("cd qwt-%s && make %s" %
+                (self.version, " ".join(build_args)))
 
     def _build_msvc(self, args = ""):
         build_command = find_executable("jom.exe")

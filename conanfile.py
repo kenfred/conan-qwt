@@ -7,7 +7,7 @@ from distutils.spawn import find_executable
 
 class QwtConan(ConanFile):
     name = "qwt"
-    version = "6.1.3"
+    version = "6.1.4"
     license = "Qwt License, Version 1.0 http://qwt.sourceforge.net/qwtlicense.html"
     url = "https://github.com/ralfschulze/conan-qwt"
     description = "The Qwt library contains GUI Components and utility classes which are " \

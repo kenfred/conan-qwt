@@ -30,11 +30,12 @@ class QwtConan(ConanFile):
     }
     default_options = "shared=True", "plot=True", "widgets=True", "svg=True", "opengl=True", \
                         "mathml=False", "designer=True", "examples=False", "playground=False"
-
-    build_requires = "qt/[>4.0]@bincrafters/stable"
-    generators = "cmake"
-    exports_sources = ["FindQwt.cmake"]               
     
+    build_requires = "qt/[>4.0]@bincrafters/stable"
+    requires = "qt/[>4.0]@bincrafters/stable"
+    generators = "qmake", "cmake"
+    exports_sources = ["FindQwt.cmake"]
+    # exports_sources += "qwt-%s.zip" % self.version
 
     def source(self):
         zip_name = "qwt-%s.zip" % self.version if sys.platform == "win32" else "qwt-%s.tar.bz2" % self.version
@@ -43,6 +44,14 @@ class QwtConan(ConanFile):
         tools.download(url, zip_name)
         tools.unzip(zip_name)
         os.unlink(zip_name)
+        tools.replace_in_file("qwt-%s/qwt.pro" % self.version, "CONFIG   += ordered",
+        '''
+        CONFIG   += ordered
+        CONFIG += conan_basic_setup
+        include(../conanbuildinfo.pri)''')
+
+    def configure(self):
+        self.options["qt"].qtsvg = self.options.svg
 
     def build(self):
         qwt_path = "qwt-%s" % self.version
@@ -77,8 +86,8 @@ class QwtConan(ConanFile):
 
     def _build_qmake(self, args = ""):
         build_args = ["-j", str(cpu_count())]
-        self.run("cd qwt-%s && qmake -r qwt.pro" %
-                (self.version))
+        self.run("cd qwt-%s && %s/bin/qmake -r qwt.pro" %
+                 (self.version, self.deps_cpp_info["qt"].rootpath))
         self.run("cd qwt-%s && make %s" %
                 (self.version, " ".join(build_args)))
 

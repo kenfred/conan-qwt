@@ -105,8 +105,8 @@ class QwtConan(ConanFile):
 
         with tools.environment_append(env_build.vars):
             vcvars = tools.vcvars_command(self.settings)
-            self.run("cd qwt-%s && %s && qmake -r qwt.pro" % (self.version, vcvars))
-            self.run("cd qwt-%s && %s && %s %s" % (self.version, vcvars, build_command, " ".join(build_args)))
+            self.run("%s && cd qwt-%s && %s\\bin\\qmake -r qwt.pro" % (vcvars, self.version, self.deps_cpp_info["qt"].rootpath))
+            self.run("%s && cd qwt-%s && %s %s" % (vcvars, self.version, build_command, " ".join(build_args)))
 
     def package(self):
         self.copy("FindQwt.cmake", ".", ".")

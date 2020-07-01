@@ -6,8 +6,8 @@ import os, sys
 from distutils.spawn import find_executable
 
 class QwtConan(ConanFile):
-    name = "Qwt"
-    version = "6.1.3"
+    name = "qwt"
+    version = "6.1.4"
     license = "Qwt License, Version 1.0 http://qwt.sourceforge.net/qwtlicense.html"
     url = "https://github.com/kenfred/conan-qwt"
     description = "The Qwt library contains GUI Components and utility classes which are " \
@@ -30,18 +30,28 @@ class QwtConan(ConanFile):
     }
     default_options = "shared=True", "plot=True", "widgets=True", "svg=True", "opengl=True", \
                         "mathml=False", "designer=True", "examples=False", "playground=False"
-
-    build_requires = "Qt/5.8.0@kenfred/testing"
-
-    exports_sources = ["FindQwt.cmake"]               
+    
+    build_requires = "qt/[>4.0]@bincrafters/stable"
+    requires = "qt/[>4.0]@bincrafters/stable"
+    generators = "qmake", "cmake"
+    exports_sources = ["FindQwt.cmake"]
+    # exports_sources += "qwt-%s.zip" % self.version
 
     def source(self):
-        zip_name = "qwt-%s.zip" % self.version if sys.platform == "win32" else "qwt-%s.tar.gz" % self.version
+        zip_name = "qwt-%s.zip" % self.version if sys.platform == "win32" else "qwt-%s.tar.bz2" % self.version
         url = "https://sourceforge.net/projects/qwt/files/qwt/%s/%s" % (self.version, zip_name)
         self.output.info("Downloading %s..." % url)
         tools.download(url, zip_name)
         tools.unzip(zip_name)
         os.unlink(zip_name)
+        tools.replace_in_file("qwt-%s/qwt.pro" % self.version, "CONFIG   += ordered",
+        '''
+        CONFIG   += ordered
+        CONFIG += conan_basic_setup
+        include(../conanbuildinfo.pri)''')
+
+    def configure(self):
+        self.options["qt"].qtsvg = self.options.svg
 
     def build(self):
         qwt_path = "qwt-%s" % self.version
@@ -72,7 +82,14 @@ class QwtConan(ConanFile):
             else:
                 raise ConanException("Not yet implemented for this compiler")
         else:
-            raise ConanException("Not yet implemented for this compiler")
+            self._build_qmake()
+
+    def _build_qmake(self, args = ""):
+        build_args = ["-j", str(cpu_count())]
+        self.run("cd qwt-%s && %s/bin/qmake -r qwt.pro" %
+                 (self.version, self.deps_cpp_info["qt"].rootpath))
+        self.run("cd qwt-%s && make %s" %
+                (self.version, " ".join(build_args)))
 
     def _build_msvc(self, args = ""):
         build_command = find_executable("jom.exe")
@@ -88,15 +105,15 @@ class QwtConan(ConanFile):
 
         with tools.environment_append(env_build.vars):
             vcvars = tools.vcvars_command(self.settings)
-            self.run("cd qwt-%s && %s && qmake -r qwt.pro" % (self.version, vcvars))
-            self.run("cd qwt-%s && %s && %s %s" % (self.version, vcvars, build_command, " ".join(build_args)))
+            self.run("%s && cd qwt-%s && %s\\bin\\qmake -r qwt.pro" % (vcvars, self.version, self.deps_cpp_info["qt"].rootpath))
+            self.run("%s && cd qwt-%s && %s %s" % (vcvars, self.version, build_command, " ".join(build_args)))
 
     def package(self):
         self.copy("FindQwt.cmake", ".", ".")
         self.copy("*.h", dst="include", src=os.path.join("qwt-%s" % self.version, "src"))
         self.copy("*qwt.lib", dst="lib", keep_path=False)
         self.copy("*.dll", dst="bin", keep_path=False)
-        self.copy("*.so", dst="lib", keep_path=False)
+        self.copy("*.so*", dst="lib", keep_path=False, symlinks=True)
         self.copy("*.dylib", dst="lib", keep_path=False)
         self.copy("*.a", dst="lib", keep_path=False)
 

@@ -9,7 +9,7 @@ class QwtConan(ConanFile):
     name = "qwt"
     version = "6.1.4"
     license = "Qwt License, Version 1.0 http://qwt.sourceforge.net/qwtlicense.html"
-    url = "https://github.com/ralfschulze/conan-qwt"
+    url = "https://github.com/kenfred/conan-qwt"
     description = "The Qwt library contains GUI Components and utility classes which are " \
                     "primarily useful for programs with a technical background. Beside a " \
                     "framework for 2D plots it provides scales, sliders, dials, compasses, " \
